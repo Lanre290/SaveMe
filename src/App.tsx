@@ -61,7 +61,7 @@ function App() {
           setLoading(false);
           setData(body);
           setTitle(Data.snippet.localized.title);
-          setDuration(body.contentDetails.duration);
+          setDuration(decodeYouTubeDuration(body.contentDetails.duration));
         } else {
           setLoading(false);
           throw new Error("Error");
@@ -118,8 +118,10 @@ function App() {
                   }}
                 ></div>
                 <div className="flex flex-col justify-evenly w-full md:w-auto md:px-8 px-1 py-2 gap-y-2">
-                  <h3 className="text-xl"> {Title} </h3>
-                  <h3 className="font-light">{Duration}</h3>
+                  <div className="flex flex-col">
+                    <h3 className="text-xl"> {Title} </h3>
+                    <h3 className="font-light">{Duration}</h3>  
+                  </div>
                   <button className="px-8 py-3 w-full md:w-auto bg-blue-500 hover:bg-blue-600 text-gray-50 text-2xl">
                     Download
                   </button>
