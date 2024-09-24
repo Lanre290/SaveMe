@@ -1,5 +1,4 @@
-// import { useState } from 'react'
-import { FaArrowRight, FaSave } from "react-icons/fa";
+import { FaArrowRight } from "react-icons/fa";
 import "./App.css";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -14,12 +13,29 @@ function App() {
   const [Data, setData] = useState<{} | any>({});
   const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
 
-  // const extractYouTubeId = (url: any) => {
-  //   const regex =
-  //     /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|.*[?&]v=)|youtu\.be\/)([\w-]{11})/;
-  //   const match = url.match(regex);
-  //   return match ? match[1] : null;
-  // };
+  const extractYouTubeId = (url: any) => {
+    let videoId = null;
+  
+    // Regex for normal YouTube links (watch?v=, embed, v, etc.)
+    const normalLinkRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:watch\?v=|embed\/|v\/|.*[?&]v=)([\w-]{11})/;
+    
+    // Regex for short YouTube links (youtu.be/)
+    const shortLinkRegex = /(?:https?:\/\/)?youtu\.be\/([\w-]{11})/;
+    
+    // Regex for YouTube Shorts (/shorts/)
+    const shortsLinkRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([\w-]{11})/;
+
+    // Test the URL with each regex
+    if (normalLinkRegex.test(url)) {
+      videoId = url.match(normalLinkRegex)[1];
+    } else if (shortLinkRegex.test(url)) {
+      videoId = url.match(shortLinkRegex)[1];
+    } else if (shortsLinkRegex.test(url)) {
+      videoId = url.match(shortsLinkRegex)[1];
+    }
+
+    return videoId;
+  };
 
   const downloadVideo = async () => {
     setDownloadingVideo(true);
@@ -30,12 +46,10 @@ function App() {
       }
     );
 
-
     if (!response.ok) {
       toast.error("Error while downloading file.");
       setDownloadingVideo(false);
-    }
-    else{
+    } else {
       setDownloadingVideo(false);
     }
   };
@@ -46,7 +60,6 @@ function App() {
     const minutes = match[2] ? parseInt(match[2]) : 0;
     const seconds = match[3] ? parseInt(match[3]) : 0;
 
-    // Format hours, minutes, and seconds into h:mm:ss
     const formattedHours = hours > 0 ? hours + ":" : "";
     const formattedMinutes =
       hours > 0 ? String(minutes).padStart(2, "0") : minutes;
@@ -65,7 +78,11 @@ function App() {
           throw new Error("Enter video link.");
         }
 
-        // setVideoId(extractYouTubeId(videoId));
+        setVideoId(extractYouTubeId(videoId));
+
+        if (videoId == null) {
+          throw new Error("Invalid link.");
+        }
         console.log(videoId);
         const response = await fetch(
           `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${videoId}&key=${apiKey}`,
@@ -147,16 +164,36 @@ function App() {
                     <h3 className="font-light">{Duration}</h3>
                   </div>
                   <button
-                    className={`px-8 py-3 w-full md:w-auto flex justify-center items-center ${DownloadingVideo == true ? 'bg-gray-500 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'} text-gray-50 text-2xl`}
+                    className={`px-8 py-3 w-full md:w-auto flex justify-center items-center ${
+                      DownloadingVideo == true
+                        ? "bg-gray-500 cursor-not-allowed"
+                        : "bg-blue-500 hover:bg-blue-600"
+                    } text-gray-50 text-2xl`}
                     onClick={downloadVideo}
                   >
-                    {DownloadingVideo == false
-                      ? "Download"
-                      : 
-                      <svg fill="#ffffff" className="animate-spin text-primary mr-1 w-7 h-7" aria-label="Loading..." aria-hidden="true" data-testid="icon" width="16" height="17" viewBox="0 0 16 17" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M4.99787 2.74907C5.92398 2.26781 6.95232 2.01691 7.99583 2.01758V3.01758C7.10643 3.01768 6.23035 3.23389 5.44287 3.64765C4.6542 4.06203 3.97808 4.66213 3.47279 5.39621C2.9675 6.13029 2.64821 6.97632 2.54245 7.86138C2.51651 8.07844 2.5036 8.29625 2.50359 8.51367H1.49585C1.49602 8.23118 1.51459 7.94821 1.55177 7.66654C1.68858 6.62997 2.07326 5.64172 2.67319 4.78565C3.27311 3.92958 4.07056 3.23096 4.99787 2.74907Z"></path><path opacity="0.15" fill-rule="evenodd" clip-rule="evenodd" d="M8 14.0137C11.0376 14.0137 13.5 11.5512 13.5 8.51367C13.5 5.47611 11.0376 3.01367 8 3.01367C4.96243 3.01367 2.5 5.47611 2.5 8.51367C2.5 11.5512 4.96243 14.0137 8 14.0137ZM8 15.0137C11.5899 15.0137 14.5 12.1035 14.5 8.51367C14.5 4.92382 11.5899 2.01367 8 2.01367C4.41015 2.01367 1.5 4.92382 1.5 8.51367C1.5 12.1035 4.41015 15.0137 8 15.0137Z">
-                          </path>
-                      </svg>}
+                    {DownloadingVideo == false ? (
+                      "Download"
+                    ) : (
+                      <svg
+                        fill="#ffffff"
+                        className="animate-spin text-primary mr-1 w-7 h-7"
+                        aria-label="Loading..."
+                        aria-hidden="true"
+                        data-testid="icon"
+                        width="16"
+                        height="17"
+                        viewBox="0 0 16 17"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path d="M4.99787 2.74907C5.92398 2.26781 6.95232 2.01691 7.99583 2.01758V3.01758C7.10643 3.01768 6.23035 3.23389 5.44287 3.64765C4.6542 4.06203 3.97808 4.66213 3.47279 5.39621C2.9675 6.13029 2.64821 6.97632 2.54245 7.86138C2.51651 8.07844 2.5036 8.29625 2.50359 8.51367H1.49585C1.49602 8.23118 1.51459 7.94821 1.55177 7.66654C1.68858 6.62997 2.07326 5.64172 2.67319 4.78565C3.27311 3.92958 4.07056 3.23096 4.99787 2.74907Z"></path>
+                        <path
+                          opacity="0.15"
+                          fill-rule="evenodd"
+                          clip-rule="evenodd"
+                          d="M8 14.0137C11.0376 14.0137 13.5 11.5512 13.5 8.51367C13.5 5.47611 11.0376 3.01367 8 3.01367C4.96243 3.01367 2.5 5.47611 2.5 8.51367C2.5 11.5512 4.96243 14.0137 8 14.0137ZM8 15.0137C11.5899 15.0137 14.5 12.1035 14.5 8.51367C14.5 4.92382 11.5899 2.01367 8 2.01367C4.41015 2.01367 1.5 4.92382 1.5 8.51367C1.5 12.1035 4.41015 15.0137 8 15.0137Z"
+                        ></path>
+                      </svg>
+                    )}
                   </button>
                 </div>
               </div>
@@ -167,7 +204,7 @@ function App() {
             Guide to use SaveMe
           </h3>
           <h3 className="text-xl text-gray-900 text-center w-full px-2 md:w-2/3 mt-5">
-            Easily download videos and music with SaveFrom.Net, the top Online
+            Easily download videos and music with SaveMe, the top Online
             Video Downloader. Get your favorite media straight from the web
             without needing extra software. Our intuitive platform makes video
             downloading fast and hassle-free. Access a wide variety of content,
@@ -190,8 +227,8 @@ function App() {
 
         <div className="w-full md:w-3/4 mx-auto h-20 flex flex-row items-center justify-center px-4 py-6 pt-20 border-t border-gray-400">
           <h3 className="font-light  flex flex-col gap-y-2 mt-6 py-6 pb-16">
-            <h3 className="text-4xl">SaveMe</h3>
-            <h5 className="font-light text-gray-900">© 2008-2024</h5>
+            <span className="text-4xl">SaveMe</span>
+            <span className="font-light text-gray-900">© 2008-2024</span>
           </h3>
         </div>
       </div>
