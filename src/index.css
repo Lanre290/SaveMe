@@ -3,47 +3,27 @@ input[type="text"] {
 }
 
 .loader {
-  border: 4px solid rgba(255, 255, 255, 0.3);
+  border: 4px solid rgba(60, 60, 60, 0.3);
   border-radius: 50%;
   border-top: 4px solid #0065fc;
   width: 40px;
   height: 40px;
   animation: spin_ 1.2s linear infinite;
   animation-delay: 0s;
+  transition-duration: 1.2s;
+  scale: 1;
 }
 
 @keyframes spin_ {
   0% {
     transform: rotate(0deg);
-    border-top: 4px solid #0065fc;
-    border-right: 4px solid transparent;
-    border-bottom: 4px solid transparent;
-    border-left: 4px solid transparent;
+    scale: 1;
   }
-  25%{
-    border-right-width: 50%;
-  }
-  50%{
-    border-top: 4px solid #0065fc;
-    border-right: 4px solid #0065fc;
-    border-right-width: 100%;
-    border-bottom: 4px solid transparent;
-    border-left: 4px solid transparent;
-  }
-  75%{
-    border-top: 4px solid #0065fc;
-    border-right: 4px solid #0065fc;
-    border-bottom: 4px solid #0065fc;
-    border-bottom-width: 50%;
-    border-left: 4px solid transparent;
+  50% {
+    scale: 1.5;
   }
   100% {
     transform: rotate(360deg);
-    border-top: 4px solid #0065fc;
-    border-right: 4px solid #0065fc;
-    border-bottom: 4px solid #0065fc;
-    border-bottom-width: 100%;
-    border-left: 4px solid #0065fc;
-    border-left-width: 50%;
+    scale: 1;
   }
 }

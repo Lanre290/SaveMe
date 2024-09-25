@@ -1,4 +1,4 @@
-import { FaArrowRight } from "react-icons/fa";
+import { FaArrowLeft, FaArrowRight, FaTimes } from "react-icons/fa";
 import "./App.css";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -11,30 +11,32 @@ function App() {
   const [Duration, setDuration] = useState("");
   const [Title, setTitle] = useState("");
   const [Data, setData] = useState<{} | any>({});
+  const [toggleDownload, setToggleDownload] = useState(false);
+  const [GettingFormats, setGettingFormats] = useState(false);
+  const [Formats, setFormats] = useState([]);
+  const [currentMediaDownload, setcurrentMediaDownload] = useState<
+    "video" | "audio"
+  >("video");
+
   const apiKey = import.meta.env.VITE_YOUTUBE_API_KEY;
 
   const extractYouTubeId = (url: any) => {
-    let videoId = null;
-  
-    // Regex for normal YouTube links (watch?v=, embed, v, etc.)
-    const normalLinkRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:watch\?v=|embed\/|v\/|.*[?&]v=)([\w-]{11})/;
-    
-    // Regex for short YouTube links (youtu.be/)
+    let id = null;
+    const normalLinkRegex =
+      /(?:https?:\/\/)?(?:www\.)?youtube\.com\/(?:watch\?v=|embed\/|v\/|.*[?&]v=)([\w-]{11})/;
     const shortLinkRegex = /(?:https?:\/\/)?youtu\.be\/([\w-]{11})/;
-    
-    // Regex for YouTube Shorts (/shorts/)
-    const shortsLinkRegex = /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([\w-]{11})/;
+    const shortsLinkRegex =
+      /(?:https?:\/\/)?(?:www\.)?youtube\.com\/shorts\/([\w-]{11})/;
 
-    // Test the URL with each regex
     if (normalLinkRegex.test(url)) {
-      videoId = url.match(normalLinkRegex)[1];
+      id = url.match(normalLinkRegex)?.[1];
     } else if (shortLinkRegex.test(url)) {
-      videoId = url.match(shortLinkRegex)[1];
+      id = url.match(shortLinkRegex)?.[1];
     } else if (shortsLinkRegex.test(url)) {
-      videoId = url.match(shortsLinkRegex)[1];
+      id = url.match(shortsLinkRegex)?.[1];
     }
 
-    return videoId;
+    return id;
   };
 
   const downloadVideo = async () => {
@@ -46,11 +48,31 @@ function App() {
       }
     );
 
-    if (!response.ok) {
-      toast.error("Error while downloading file.");
+    if (response.ok) {
       setDownloadingVideo(false);
     } else {
       setDownloadingVideo(false);
+      console.log(DownloadingVideo);
+      toast.error("Error while downloading file.");
+    }
+  };
+
+  const fetchFormats = async () => {
+    setGettingFormats(true);
+    const response = await fetch(
+      `${import.meta.env.VITE_BACKEND_URL}/fetchformats?url=${videoId}`,
+      {
+        method: "GET",
+      }
+    );
+
+    if (response.ok) {
+      setGettingFormats(false);
+      console.log(await response.json());
+    } else {
+      setGettingFormats(false);
+      console.log(DownloadingVideo);
+      toast.error("Error while downloading file.");
     }
   };
 
@@ -69,16 +91,15 @@ function App() {
   };
 
   const handleSubmit = (e: any) => {
-    setLoading(true);
     e.preventDefault();
+    setLoading(true);
+    setDownloadingVideo(false);
 
     const getVideoData = async () => {
       try {
         if (videoId.length == 0) {
           throw new Error("Enter video link.");
         }
-
-        setVideoId(extractYouTubeId(videoId));
 
         if (videoId == null) {
           throw new Error("Invalid link.");
@@ -95,11 +116,10 @@ function App() {
           let res = await response.json();
           console.log(res);
           let body = res.items[0];
-          console.log(body);
-          setLoading(false);
           setData(body);
-          setTitle(Data.snippet.localized.title);
+          setTitle(body.snippet.localized.title);
           setDuration(decodeYouTubeDuration(body.contentDetails.duration));
+          setLoading(false);
         } else {
           setLoading(false);
           throw new Error("Error");
@@ -135,7 +155,7 @@ function App() {
               type="text"
               className="flex flex-grow text-xl p-5 py-4 rounded-tl-3xl rounded-bl-3xl"
               placeholder="Paste video link here..."
-              onInput={(e: any) => setVideoId(e.target.value)}
+              onInput={(e: any) => setVideoId(extractYouTubeId(e.target.value))}
               required
             />
             <button
@@ -148,7 +168,7 @@ function App() {
             </button>
           </form>
 
-          <div className="my-10 w-full md:w-auto">
+          <div className="my-10 w-ful md:w-4/5 lg:w-3/5">
             {Loading && <div className="loader mx-auto my-10"></div>}
             {Object.keys(Data).length != 0 && Data != undefined && (
               <div className="flex flex-col md:flex-row justify-center border border-gray-500 p-5 w-full md:w-auto">
@@ -160,8 +180,17 @@ function App() {
                 ></div>
                 <div className="flex flex-col justify-evenly w-full md:w-auto md:px-8 px-1 py-2 gap-y-2">
                   <div className="flex flex-col">
-                    <h3 className="text-xl"> {Title} </h3>
-                    <h3 className="font-light">{Duration}</h3>
+                    <h3 className="text-xl">
+                      {" "}
+                      {Title.length > 0
+                        ? Title
+                        : Data.snippet.localized.title}{" "}
+                    </h3>
+                    <h3 className="font-light">
+                      {Duration.length > 0
+                        ? Duration
+                        : decodeYouTubeDuration(Data.contentDetails.duration)}
+                    </h3>
                   </div>
                   <button
                     className={`px-8 py-3 w-full md:w-auto flex justify-center items-center ${
@@ -169,7 +198,10 @@ function App() {
                         ? "bg-gray-500 cursor-not-allowed"
                         : "bg-blue-500 hover:bg-blue-600"
                     } text-gray-50 text-2xl`}
-                    onClick={downloadVideo}
+                    onClick={() => {
+                      setToggleDownload(true);
+                      fetchFormats();
+                    }}
                   >
                     {DownloadingVideo == false ? (
                       "Download"
@@ -204,9 +236,9 @@ function App() {
             Guide to use SaveMe
           </h3>
           <h3 className="text-xl text-gray-900 text-center w-full px-2 md:w-2/3 mt-5">
-            Easily download videos and music with SaveMe, the top Online
-            Video Downloader. Get your favorite media straight from the web
-            without needing extra software. Our intuitive platform makes video
+            Easily download videos and music with SaveMe, the top Online Video
+            Downloader. Get your favorite media straight from the web without
+            needing extra software. Our intuitive platform makes video
             downloading fast and hassle-free. Access a wide variety of content,
             from popular movies and trending TV shows to thrilling sports clips.
             Simply paste the video URL into the designated field and click the
@@ -217,8 +249,8 @@ function App() {
           </h3>
           <h3 className="text-xl text-gray-900 text-center w-full px-2 md:w-2/3 mt-5">
             Streaming videos online with a fast connection offers instant
-            access, but offline playback has its benefits. SaveFrom.Net delivers
-            a robust video downloader that preserves video quality, allowing you
+            access, but offline playback has its benefits. SaveMe delivers a
+            robust video downloader that preserves video quality, allowing you
             to download videos in crisp, high-definition MP4 format. With our
             trusted service, you can enjoy your favorite videos anytime,
             anywhere by converting and saving them as high-quality HD MP4 files.
@@ -226,12 +258,125 @@ function App() {
         </div>
 
         <div className="w-full md:w-3/4 mx-auto h-20 flex flex-row items-center justify-center px-4 py-6 pt-20 border-t border-gray-400">
-          <h3 className="font-light  flex flex-col gap-y-2 mt-6 py-6 pb-16">
+          <h3 className="font-light  flex flex-col items-center gap-y-2 mt-6 py-6 pb-16">
             <span className="text-4xl">SaveMe</span>
-            <span className="font-light text-gray-900">© 2008-2024</span>
+            <span className="font-light text-gray-900">© 2024</span>
           </h3>
         </div>
       </div>
+
+      {toggleDownload && (
+        <div className="fixed top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 flex items-center justify-center">
+          {GettingFormats && <div className="loader mx-auto my-10"></div>}
+          {GettingFormats == false && (
+            <div
+              className="w-full max-h-full md:w-1/2 md:my-10 lg:w-1/3 bg-gray-50 p-2 md:p-5 md:rounded-2xl overflow-y-auto"
+              style={{ maxHeight: "96%" }}
+            >
+              {screen.width < 768 && (
+                <button className="w-12 h-12 text-gray-900 cursor-pointer flex items-center justify-center rounded-full hover:bg-gray-200">
+                  <FaArrowLeft></FaArrowLeft>
+                </button>
+              )}
+              {screen.width > 768 && (
+                <button className="w-12 h-12 text-gray-900 cursor-pointer flex items-center justify-center rounded-full hover:bg-gray-200">
+                  <FaTimes></FaTimes>
+                </button>
+              )}
+              <h3 className="text-center text-3xl my-5">
+                Choose download format.
+              </h3>
+              <div className="flex flex-row w-full">
+                <div
+                  className={`w-1/2 h-14 text-gray-900 cursor-pointer flex justify-center items-center hover:bg-gray-200 ${
+                    currentMediaDownload == "video"
+                      ? "border-b border-blue-500"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    setcurrentMediaDownload("video");
+                  }}
+                >
+                  Video
+                </div>
+                <div
+                  className={`w-1/2 h-14 text-gray-900 cursor-pointer flex justify-center items-center hover:bg-gray-200 ${
+                    currentMediaDownload == "audio"
+                      ? "border-b border-blue-500"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    setcurrentMediaDownload("audio");
+                  }}
+                >
+                  Audio
+                </div>
+              </div>
+
+              {currentMediaDownload == "video" && (
+                <div className="w-full flex flex-col">
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    Mp4 240p
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    Mp4 360p
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    Mp4 480p
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    Mp4 720p
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    Mp4 1k
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    Mp4 2k
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    mkv 240p
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    mkv 360p
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    mkv 480p
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    mkv 720p
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    mkv 1k
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    mkv 2k
+                  </div>
+                </div>
+              )}
+
+              {currentMediaDownload == "audio" && (
+                <div className="w-full flex flex-col">
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    Mp3
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    M4a
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    Opus
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    AAC
+                  </div>
+                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                    OGG
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
     </>
   );
 }
