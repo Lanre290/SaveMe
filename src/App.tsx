@@ -80,7 +80,7 @@ function App() {
     } else {
       setGettingFormats(false);
       console.log(DownloadingVideo);
-      toast.error("Error while downloading file.");
+      toast.error("Error fetching file info.");
     }
   };
 
