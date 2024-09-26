@@ -8,6 +8,7 @@ import "./App.css";
 import { useState } from "react";
 import { toast } from "react-toastify";
 import logo from "./assets/logo.png";
+import { FaVolumeHigh } from "react-icons/fa6";
 
 function App() {
   const [videoId, setVideoId] = useState("");
@@ -321,23 +322,23 @@ function App() {
               </div>
 
               {currentMediaDownload == "video" && (
-                <div className="w-full flex flex-col">
-                  {Formats.map((element:any) => (
-                    element.hasVideo == true && (<a href={element.url} className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                <ul className="w-full flex flex-col">
+                  {Formats.map((element:any, index:any) => (
+                    element.hasVideo == true && (<li key={index} className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200" onClick={() => {downloadMedia(element.container)}}>
                       {element.container} {element.qualityLabel}&nbsp;{element.hasAudio == false && <FaVolumeMute></FaVolumeMute>}
-                    </a>)
+                    </li>)
                   ))}
-                </div>
+                </ul>
               )}
 
               {currentMediaDownload == "audio" && (
-                <div className="w-full flex flex-col">
-                  {Formats.map((element:any) => (
-                    element.hasAudio == true && element.hasVideo == false && (<a href={element.url} className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                      {element.container} {element.audioBitrate} kbps
-                    </a>)
+                <ul className="w-full flex flex-col">
+                  {Formats.map((element:any, index:any) => (
+                    element.hasAudio == true && element.hasVideo == false && (<li key={index} className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200" onClick={() => {downloadMedia(element.container)}}>
+                       <FaVolumeHigh></FaVolumeHigh>&nbsp; {element.container} {element.audioBitrate} kbps
+                    </li>)
                   ))}
-                </div>
+                </ul>
               )}
             </div>
           )}
