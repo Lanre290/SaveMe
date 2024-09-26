@@ -1,4 +1,9 @@
-import { FaArrowLeft, FaArrowRight, FaTimes } from "react-icons/fa";
+import {
+  FaArrowLeft,
+  FaArrowRight,
+  FaTimes,
+  FaVolumeMute,
+} from "react-icons/fa";
 import "./App.css";
 import { useState } from "react";
 import { toast } from "react-toastify";
@@ -39,10 +44,10 @@ function App() {
     return id;
   };
 
-  const downloadVideo = async () => {
+  const downloadMedia = async (format:any) => {
     setDownloadingVideo(true);
     const response = await fetch(
-      `${import.meta.env.VITE_BACKEND_URL}/download?url=${videoId}`,
+      `${import.meta.env.VITE_BACKEND_URL}/download?url=${videoId}&format=${format}`,
       {
         method: "GET",
       }
@@ -68,7 +73,9 @@ function App() {
 
     if (response.ok) {
       setGettingFormats(false);
-      console.log(await response.json());
+      let res = await response.json();
+      console.log(res);
+      setFormats(res);
     } else {
       setGettingFormats(false);
       console.log(DownloadingVideo);
@@ -279,7 +286,7 @@ function App() {
                 </button>
               )}
               {screen.width > 768 && (
-                <button className="w-12 h-12 text-gray-900 cursor-pointer flex items-center justify-center rounded-full hover:bg-gray-200">
+                <button className="w-12 h-12 text-gray-900 cursor-pointer flex items-center justify-center rounded-full hover:bg-gray-200" onClick={() => {setToggleDownload(false)}}>
                   <FaTimes></FaTimes>
                 </button>
               )}
@@ -315,62 +322,21 @@ function App() {
 
               {currentMediaDownload == "video" && (
                 <div className="w-full flex flex-col">
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    Mp4 240p
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    Mp4 360p
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    Mp4 480p
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    Mp4 720p
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    Mp4 1k
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    Mp4 2k
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    mkv 240p
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    mkv 360p
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    mkv 480p
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    mkv 720p
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    mkv 1k
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    mkv 2k
-                  </div>
+                  {Formats.map((element:any) => (
+                    element.hasVideo == true && (<a href={element.url} className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                      {element.container} {element.qualityLabel}&nbsp;{element.hasAudio == false && <FaVolumeMute></FaVolumeMute>}
+                    </a>)
+                  ))}
                 </div>
               )}
 
               {currentMediaDownload == "audio" && (
                 <div className="w-full flex flex-col">
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    Mp3
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    M4a
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    Opus
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    AAC
-                  </div>
-                  <div className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
-                    OGG
-                  </div>
+                  {Formats.map((element:any) => (
+                    element.hasAudio == true && element.hasVideo == false && (<a href={element.url} className="flex flex-row w-full items-center px-5 cursor-pointer h-16 hover:bg-gray-200">
+                      {element.container} {element.audioBitrate} kbps
+                    </a>)
+                  ))}
                 </div>
               )}
             </div>
